@@ -14,11 +14,11 @@ export const useTwo = <T extends HTMLElement>(
       return;
     }
 
-    const params = {
+    twoRef.current = new Two({
       width: el.clientWidth,
       height: el.clientHeight,
-    };
-    twoRef.current = new Two(params);
+      // autostart: false,
+    });
     twoRef.current.appendTo(el);
   }, []);
   useEffect(() => {
