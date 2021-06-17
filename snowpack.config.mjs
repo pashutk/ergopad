@@ -30,6 +30,6 @@ export default {
     /* ... */
   },
   buildOptions: {
-    /* ... */
+    baseUrl: '/ergopad',
   },
 };
