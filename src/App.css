@@ -1,46 +1,60 @@
-.App {
-  text-align: center;
-}
-.App code {
-  background: #FFF3;
-  padding: 4px 8px;
-  border-radius: 4px;
-}
-.App p {
-  margin: 0.4rem;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.app {
   display: flex;
   flex-direction: column;
+  height: 100vh;
+  background-color: #353535;
+  color: #ccc;
+}
+
+.topbar {
+  min-height: 3rem;
+  border-bottom: 1px solid #ccc;
+  padding: 1rem 2rem;
+  display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
 }
 
-.App-link {
-  color: #61dafb;
+.touchytouchy {
+  background-color: rgba(255, 255, 255, 0.3);
+  height: 100%;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.columnButtons {
+  display: flex;
+  gap: 1rem;
+}
+
+.button {
+  border: 1px solid;
+  padding: 1rem;
+}
+
+.columnButtonActive {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.columnButtonColor {
+  height: 0.5rem;
+  margin-top: 0.5rem;
+  border: 1px solid;
+}
+
+.boo {
+  height: 100%;
+}
+
+.columnButton {
+  border: 1px solid;
+  padding: 1rem;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 1rem;
+}
+
+.resetButton {
+  display: block;
+  background: transparent;
+  color: #ccc;
 }
