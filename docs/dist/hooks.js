@@ -6,11 +6,10 @@ export const useTwo = (elRef, f, fDeps) => {
     if (!el) {
       return;
     }
-    const params = {
+    twoRef.current = new Two({
       width: el.clientWidth,
       height: el.clientHeight
-    };
-    twoRef.current = new Two(params);
+    });
     twoRef.current.appendTo(el);
   }, []);
   useEffect(() => {

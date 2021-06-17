@@ -132,6 +132,7 @@ export default () => {
   const linearScale = mmPer300px / 30;
   useEffect(() => {
     function f(evt) {
+      evt.preventDefault();
       setPositions((pos) => ({
         ...pos,
         [column]: pos[column].concat([
@@ -146,7 +147,7 @@ export default () => {
     return () => {
       ref.current?.removeEventListener("pointerdown", f);
     };
-  }, [ref, column]);
+  }, [ref.current, column]);
   return /* @__PURE__ */ React.createElement("div", {
     className: "app"
   }, /* @__PURE__ */ React.createElement("div", {

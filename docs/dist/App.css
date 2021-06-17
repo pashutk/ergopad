@@ -16,7 +16,9 @@
 
 .touchytouchy {
   background-color: rgba(255, 255, 255, 0.3);
-  height: 100%;
+  width: 100%;
+  flex-grow: 1;
+  display: flex;
 }
 
 .columnButtons {
@@ -40,7 +42,8 @@
 }
 
 .boo {
-  height: 100%;
+  display: flex;
+  width: 100%;
 }
 
 .columnButton {
