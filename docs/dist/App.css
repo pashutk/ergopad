@@ -1,0 +1,60 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #353535;
+  color: #ccc;
+}
+
+.topbar {
+  min-height: 3rem;
+  border-bottom: 1px solid #ccc;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+}
+
+.touchytouchy {
+  background-color: rgba(255, 255, 255, 0.3);
+  height: 100%;
+}
+
+.columnButtons {
+  display: flex;
+  gap: 1rem;
+}
+
+.button {
+  border: 1px solid;
+  padding: 1rem;
+}
+
+.columnButtonActive {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.columnButtonColor {
+  height: 0.5rem;
+  margin-top: 0.5rem;
+  border: 1px solid;
+}
+
+.boo {
+  height: 100%;
+}
+
+.columnButton {
+  border: 1px solid;
+  padding: 1rem;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 1rem;
+}
+
+.resetButton {
+  display: block;
+  background: transparent;
+  color: #ccc;
+}
