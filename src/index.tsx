@@ -2,11 +2,24 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import App from './App';
 import './index.css';
+import { Windmill } from '@windmill/react-ui';
 
 ReactDOM.render(
-  <React.StrictMode>
+  <Windmill
+    dark
+    theme={{
+      button: {
+        primary: {
+          base: 'text-white bg-gray-600 border border-transparent',
+          active:
+            'active:bg-gray-600 hover:bg-gray-700 focus:ring focus:ring-gray-300',
+          disabled: 'opacity-50 cursor-not-allowed',
+        },
+      },
+    }}
+  >
     <App />
-  </React.StrictMode>,
+  </Windmill>,
   document.getElementById('root'),
 );
 

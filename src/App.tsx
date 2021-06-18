@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useReducer } from 'react';
 import './App.css';
 import { leastSquares } from './leastSquares';
 import { useTwo } from './hooks';
@@ -7,6 +7,25 @@ import {
   projectPointToLine,
   slopeInterceptFormToStandardForm,
 } from './geometry';
+import { pipe } from 'fp-ts/lib/function';
+import * as O from 'fp-ts/lib/Option';
+import * as T from 'fp-ts/lib/Task';
+import * as TE from 'fp-ts/lib/TaskEither';
+import * as IO from 'fp-ts/lib/IO';
+import * as IOE from 'fp-ts/lib/IOEither';
+import { getFloat, getItem, setPrimitive } from './localStorage';
+import { sequenceS } from 'fp-ts/lib/Apply';
+import * as AED from './asyncEitherData';
+import * as N from 'fp-ts-std/Number';
+import {
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Button,
+  Input,
+  Label,
+} from '@windmill/react-ui';
 
 type Column = 'pinky' | 'ring' | 'middle' | 'index' | 'index_far' | 'thumb';
 
@@ -45,19 +64,22 @@ const ColumnSelect = ({
   column: Column;
   onChange: (c: Column) => void;
 }) => (
-  <div className="buttonGroup">
+  <div className="overflow-auto flex gap-2 pt-1 pb-1 pr-4">
     {columns.map((a) => (
-      <div
+      <Button
+        layout={column === a ? 'outline' : 'primary'}
         key={a}
-        className={`button ${column === a ? 'columnButtonActive' : ''}`}
         onClick={() => onChange(a)}
+        iconRight={() => (
+          <div
+            className="h-4 w-4 ml-2 rounded"
+            style={{ backgroundColor: columnToColor(a) }}
+          ></div>
+        )}
+        size="large"
       >
-        <div>{a}</div>
-        <div
-          className="columnButtonColor"
-          style={{ backgroundColor: columnToColor(a) }}
-        ></div>
-      </div>
+        {a}
+      </Button>
     ))}
   </div>
 );
@@ -201,11 +223,57 @@ const defaultPositions: Record<Column, Pos[]> = {
 
 const defaultMMPer300px = 100;
 
-export default () => {
+const ScaleTune = ({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (a: string) => void;
+}) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  return (
+    <>
+      <Button onClick={() => setIsModalOpen(true)}>Tune scale</Button>
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+        <ModalHeader>
+          <h2 className="text-xl">Tune scale factor</h2>
+        </ModalHeader>
+        <ModalBody>
+          <p className="mb-4 text-base">
+            Default values used for displaying keycap size can be too far from
+            real keycap size. To correct that measure width of the red line
+            below and enter width in mm in the input.
+          </p>
+          <div className="h-1 bg-red-700 mb-2" />
+          <Label>
+            <p className="mb-1 text-sm">Enter scale factor</p>
+            <Input css type="number" value={value} />
+          </Label>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            className="w-full sm:w-auto"
+            onClick={() => setIsModalOpen(false)}
+          >
+            Ok
+          </Button>
+        </ModalFooter>
+      </Modal>
+    </>
+  );
+};
+
+export const App = ({ storedScale }: { storedScale: O.Option<number> }) => {
   const [column, setColumn] = useState(defaultColumn);
   const [positions, setPositions] = useState(defaultPositions);
   const ref = useRef<HTMLDivElement>(null);
-  const [mmPer300px, setMmPer300px] = useState(defaultMMPer300px);
+  const [mmPer300px, setMmPer300px] = useState(
+    pipe(
+      storedScale,
+      O.getOrElse(() => defaultMMPer300px),
+    ),
+  );
   const linearScale = mmPer300px / 30;
 
   useEffect(() => {
@@ -229,11 +297,11 @@ export default () => {
 
   return (
     <div className="app">
-      <div className="topbar buttonGroup">
+      <div className="container p-4 pt-3 pr-0 flex flex-col gap-4">
         <ColumnSelect column={column} onChange={(c) => setColumn(c)} />
-        <div className="buttonGroup">
-          <button
-            className="button resetButton"
+        <div className="flex gap-2 pr-4">
+          <Button
+            className=""
             onClick={() =>
               setPositions((pos) => ({
                 ...pos,
@@ -242,21 +310,23 @@ export default () => {
             }
           >
             Reset column
-          </button>
-          <button
-            className="button resetButton"
-            onClick={() => setPositions(defaultPositions)}
-          >
+          </Button>
+          <Button className="" onClick={() => setPositions(defaultPositions)}>
             Reset all
-          </button>
-        </div>
-        <div>
-          <label>Scale: </label>
-          <input
-            type="number"
-            value={mmPer300px}
-            onChange={(evt) => {
-              setMmPer300px(parseFloat(evt.target.value));
+          </Button>
+          <ScaleTune
+            value={String(mmPer300px)}
+            onChange={(v) => {
+              pipe(
+                N.floatFromString(v),
+                O.fold(
+                  () => {},
+                  (n) => {
+                    setPrimitive('SCALE_FACTOR', n)();
+                    setMmPer300px(n);
+                  },
+                ),
+              );
             }}
           />
         </div>
@@ -267,3 +337,20 @@ export default () => {
     </div>
   );
 };
+
+const setup = () =>
+  pipe(
+    { scale: TE.fromIOEither(getFloat('SCALE_FACTOR')) },
+    sequenceS(TE.ApplyPar),
+  );
+
+export default () =>
+  pipe(
+    AED.useAsyncEitherData(setup()),
+    AED.fold(
+      () => <>Initialization</>,
+      () => <>Loading</>,
+      (e) => <p>Error: {JSON.stringify(e)}</p>,
+      (config) => <App storedScale={config.scale} />,
+    ),
+  );

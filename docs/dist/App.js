@@ -6,6 +6,22 @@ import {
   projectPointToLine,
   slopeInterceptFormToStandardForm
 } from "./geometry.js";
+import {pipe} from "../_snowpack/pkg/fp-ts/lib/function.js";
+import * as O from "../_snowpack/pkg/fp-ts/lib/Option.js";
+import * as TE from "../_snowpack/pkg/fp-ts/lib/TaskEither.js";
+import {getFloat, setPrimitive} from "./localStorage.js";
+import {sequenceS} from "../_snowpack/pkg/fp-ts/lib/Apply.js";
+import * as AED from "./asyncEitherData.js";
+import * as N from "../_snowpack/pkg/fp-ts-std/Number.js";
+import {
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Button,
+  Input,
+  Label
+} from "../_snowpack/pkg/@windmill/react-ui.js";
 const defaultColumn = "middle";
 const columns = [
   "thumb",
@@ -35,15 +51,17 @@ const ColumnSelect = ({
   column,
   onChange
 }) => /* @__PURE__ */ React.createElement("div", {
-  className: "buttonGroup"
-}, columns.map((a) => /* @__PURE__ */ React.createElement("div", {
+  className: "overflow-auto flex gap-2 pt-1 pb-1 pr-4"
+}, columns.map((a) => /* @__PURE__ */ React.createElement(Button, {
+  layout: column === a ? "outline" : "primary",
   key: a,
-  className: `button ${column === a ? "columnButtonActive" : ""}`,
-  onClick: () => onChange(a)
-}, /* @__PURE__ */ React.createElement("div", null, a), /* @__PURE__ */ React.createElement("div", {
-  className: "columnButtonColor",
-  style: {backgroundColor: columnToColor(a)}
-}))));
+  onClick: () => onChange(a),
+  iconRight: () => /* @__PURE__ */ React.createElement("div", {
+    className: "h-4 w-4 ml-2 rounded",
+    style: {backgroundColor: columnToColor(a)}
+  }),
+  size: "large"
+}, a)));
 const Boo = ({
   data,
   linearScale
@@ -124,11 +142,38 @@ const defaultPositions = {
   pinky: []
 };
 const defaultMMPer300px = 100;
-export default () => {
+const ScaleTune = ({
+  value,
+  onChange
+}) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(Button, {
+    onClick: () => setIsModalOpen(true)
+  }, "Tune scale"), /* @__PURE__ */ React.createElement(Modal, {
+    isOpen: isModalOpen,
+    onClose: () => setIsModalOpen(false)
+  }, /* @__PURE__ */ React.createElement(ModalHeader, null, /* @__PURE__ */ React.createElement("h2", {
+    className: "text-xl"
+  }, "Tune scale factor")), /* @__PURE__ */ React.createElement(ModalBody, null, /* @__PURE__ */ React.createElement("p", {
+    className: "mb-4 text-base"
+  }, "Default values used for displaying keycap size can be too far from real keycap size. To correct that measure width of the red line below and enter width in mm in the input."), /* @__PURE__ */ React.createElement("div", {
+    className: "h-1 bg-red-700 mb-2"
+  }), /* @__PURE__ */ React.createElement(Label, null, /* @__PURE__ */ React.createElement("p", {
+    className: "mb-1 text-sm"
+  }, "Enter scale factor"), /* @__PURE__ */ React.createElement(Input, {
+    css: true,
+    type: "number",
+    value
+  }))), /* @__PURE__ */ React.createElement(ModalFooter, null, /* @__PURE__ */ React.createElement(Button, {
+    className: "w-full sm:w-auto",
+    onClick: () => setIsModalOpen(false)
+  }, "Ok"))));
+};
+export const App = ({storedScale}) => {
   const [column, setColumn] = useState(defaultColumn);
   const [positions, setPositions] = useState(defaultPositions);
   const ref = useRef(null);
-  const [mmPer300px, setMmPer300px] = useState(defaultMMPer300px);
+  const [mmPer300px, setMmPer300px] = useState(pipe(storedScale, O.getOrElse(() => defaultMMPer300px)));
   const linearScale = mmPer300px / 30;
   useEffect(() => {
     function f(evt) {
@@ -151,26 +196,29 @@ export default () => {
   return /* @__PURE__ */ React.createElement("div", {
     className: "app"
   }, /* @__PURE__ */ React.createElement("div", {
-    className: "topbar buttonGroup"
+    className: "container p-4 pt-3 pr-0 flex flex-col gap-4"
   }, /* @__PURE__ */ React.createElement(ColumnSelect, {
     column,
     onChange: (c) => setColumn(c)
   }), /* @__PURE__ */ React.createElement("div", {
-    className: "buttonGroup"
-  }, /* @__PURE__ */ React.createElement("button", {
-    className: "button resetButton",
+    className: "flex gap-2 pr-4"
+  }, /* @__PURE__ */ React.createElement(Button, {
+    className: "",
     onClick: () => setPositions((pos) => ({
       ...pos,
       [column]: []
     }))
-  }, "Reset column"), /* @__PURE__ */ React.createElement("button", {
-    className: "button resetButton",
+  }, "Reset column"), /* @__PURE__ */ React.createElement(Button, {
+    className: "",
     onClick: () => setPositions(defaultPositions)
-  }, "Reset all")), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", null, "Scale: "), /* @__PURE__ */ React.createElement("input", {
-    type: "number",
-    value: mmPer300px,
-    onChange: (evt) => {
-      setMmPer300px(parseFloat(evt.target.value));
+  }, "Reset all"), /* @__PURE__ */ React.createElement(ScaleTune, {
+    value: String(mmPer300px),
+    onChange: (v) => {
+      pipe(N.floatFromString(v), O.fold(() => {
+      }, (n) => {
+        setPrimitive("SCALE_FACTOR", n)();
+        setMmPer300px(n);
+      }));
     }
   }))), /* @__PURE__ */ React.createElement("div", {
     className: "touchytouchy",
@@ -180,3 +228,7 @@ export default () => {
     linearScale
   })));
 };
+const setup = () => pipe({scale: TE.fromIOEither(getFloat("SCALE_FACTOR"))}, sequenceS(TE.ApplyPar));
+export default () => pipe(AED.useAsyncEitherData(setup()), AED.fold(() => /* @__PURE__ */ React.createElement(React.Fragment, null, "Initialization"), () => /* @__PURE__ */ React.createElement(React.Fragment, null, "Loading"), (e) => /* @__PURE__ */ React.createElement("p", null, "Error: ", JSON.stringify(e)), (config) => /* @__PURE__ */ React.createElement(App, {
+  storedScale: config.scale
+})));

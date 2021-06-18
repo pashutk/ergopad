@@ -1,5 +1,14 @@
 {
   "imports": {
+    "@windmill/react-ui": "./@windmill/react-ui.js",
+    "fp-ts-std/JSON": "./fp-ts-std/JSON.js",
+    "fp-ts-std/Number": "./fp-ts-std/Number.js",
+    "fp-ts/lib/Apply": "./fp-ts/lib/Apply.js",
+    "fp-ts/lib/Either": "./fp-ts/lib/Either.js",
+    "fp-ts/lib/IOEither": "./fp-ts/lib/IOEither.js",
+    "fp-ts/lib/Option": "./fp-ts/lib/Option.js",
+    "fp-ts/lib/TaskEither": "./fp-ts/lib/TaskEither.js",
+    "fp-ts/lib/function": "./fp-ts/lib/function.js",
     "ml-regression-simple-linear": "./ml-regression-simple-linear.js",
     "react": "./react.js",
     "react-dom": "./react-dom.js"

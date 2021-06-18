@@ -1,0 +1,14 @@
+import {pipe} from "../_snowpack/pkg/fp-ts/lib/function.js";
+import IOE from "../_snowpack/pkg/fp-ts/lib/IOEither.js";
+import E from "../_snowpack/pkg/fp-ts/lib/Either.js";
+import O from "../_snowpack/pkg/fp-ts/lib/Option.js";
+import * as N from "../_snowpack/pkg/fp-ts-std/Number.js";
+import * as J from "../_snowpack/pkg/fp-ts-std/JSON.js";
+const getItemUnsafe = (key) => () => O.fromNullable(localStorage.getItem(key));
+export const getItem = (key) => pipe(IOE.tryCatch(() => localStorage.getItem(key), E.toError), IOE.map(O.fromNullable));
+const removeItemUnsafe = (key) => () => localStorage.removeItem(key);
+export const removeItem = (key) => IOE.tryCatch(removeItemUnsafe(key), E.toError);
+const setItemUnsafe = (key, value) => () => localStorage.setItem(key, value);
+export const setItem = (key, value) => IOE.tryCatch(setItemUnsafe(key, value), E.toError);
+export const getFloat = (key) => pipe(getItem(key), IOE.map(O.chain(N.floatFromString)));
+export const setPrimitive = (key, p) => setItem(key, pipe(p, J.stringifyPrimitive, J.unJSONString));

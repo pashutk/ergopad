@@ -5,6 +5,7 @@ export default {
     src: { url: '/dist' },
   },
   plugins: [
+    '@snowpack/plugin-postcss',
     '@snowpack/plugin-react-refresh',
     '@snowpack/plugin-dotenv',
     [
@@ -27,7 +28,7 @@ export default {
     /* ... */
   },
   devOptions: {
-    /* ... */
+    tailwindConfig: './tailwind.config.js',
   },
   buildOptions: {
     baseUrl: '/ergopad',
