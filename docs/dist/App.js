@@ -1,4 +1,9 @@
-import React, {useState, useEffect, useRef} from "../_snowpack/pkg/react.js";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback
+} from "../_snowpack/pkg/react.js";
 import "./App.css.proxy.js";
 import {leastSquares} from "./leastSquares.js";
 import {useTwo} from "./hooks.js";
@@ -64,32 +69,39 @@ const ColumnSelect = ({
 }, a)));
 const Boo = ({
   data,
-  linearScale
+  ppm,
+  showAuxiliaryLines
 }) => {
   const ref = useRef(null);
   useTwo(ref, (two, el) => {
     Object.entries(data).forEach(([column, positions]) => {
       const fill = columnToColor(column);
-      positions.forEach((pos) => {
-        const circle = two.makeCircle(pos.x, pos.y, 15);
-        circle.linewidth = 0;
-        circle.fill = fill;
-        circle.opacity = 0.5;
-      });
+      if (showAuxiliaryLines) {
+        positions.forEach((pos) => {
+          const circle = two.makeCircle(pos.x, pos.y, 15);
+          circle.linewidth = 0;
+          circle.fill = fill;
+          circle.opacity = 0.5;
+        });
+      }
       if (positions.length > 1) {
         const trendline = leastSquares(positions, column !== "thumb");
-        const line = two.makeLine(0, trendline.b, el.clientWidth, trendline.m * el.clientWidth + trendline.b);
-        line.stroke = fill;
-        line.opacity = 0.5;
+        if (showAuxiliaryLines) {
+          const line = two.makeLine(0, trendline.b, el.clientWidth, trendline.m * el.clientWidth + trendline.b);
+          line.stroke = fill;
+          line.opacity = 0.5;
+        }
         const projections = positions.map(projectPointToLine(slopeInterceptFormToStandardForm(trendline)));
-        projections.forEach((pos, i) => {
-          const circle = two.makeCircle(pos.x, pos.y, 3);
-          circle.linewidth = 0;
-          circle.fill = "red";
-          circle.opacity = 0.3;
-          const line2 = two.makeLine(pos.x, pos.y, positions[i].x, positions[i].y);
-          line2.stroke = fill;
-        });
+        if (showAuxiliaryLines) {
+          projections.forEach((pos, i) => {
+            const circle = two.makeCircle(pos.x, pos.y, 3);
+            circle.linewidth = 0;
+            circle.fill = "red";
+            circle.opacity = 0.3;
+            const line = two.makeLine(pos.x, pos.y, positions[i].x, positions[i].y);
+            line.stroke = fill;
+          });
+        }
         const xs = projections.map(({x}) => x);
         const minX = Math.min(...xs);
         const averageX = (Math.max(...xs) - minX) / 2 + minX;
@@ -97,9 +109,9 @@ const Boo = ({
           x: averageX,
           y: trendline.m * averageX + trendline.b
         };
-        const keyWidth = 17 * linearScale;
+        const keyWidth = 17 * ppm;
         const keyHeight = keyWidth;
-        const gapY = 2 * linearScale;
+        const gapY = 2 * ppm;
         const originX = 0;
         const originY = 0;
         const homeRowKey = two.makeRectangle(originX, originY, keyWidth, keyHeight);
@@ -127,7 +139,7 @@ const Boo = ({
     return () => {
       two.clear();
     };
-  }, [data, ref.current, linearScale]);
+  }, [data, ref.current, ppm, showAuxiliaryLines]);
   return /* @__PURE__ */ React.createElement("div", {
     className: "boo",
     ref
@@ -142,39 +154,61 @@ const defaultPositions = {
   pinky: []
 };
 const defaultMMPer300px = 100;
-const ScaleTune = ({
+const DEFAULT_PX_PER_MM_VALUE = 5;
+const PIX_PER_MM_LOCALSTORAGE_KEY = "stored_ppm";
+const PxPerMMControl = ({
+  defaultValue,
   value,
   onChange
 }) => {
+  const [inputVal, setInputVal] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const measureRef = useRef(null);
+  const onChangeHandler = useCallback((evt) => {
+    const newValue = pipe(O.Do, O.apS("px", pipe(measureRef.current, O.fromNullable, O.map((el) => el.clientWidth))), O.apS("mm", pipe(evt.target.value, N.floatFromString)), O.bind("value", ({mm, px}) => O.of(px / mm)));
+    setInputVal(pipe(newValue, O.map(({mm}) => mm), O.getOrElse(() => 130)));
+    onChange(pipe(newValue, O.map(({value: value2}) => value2), O.getOrElse(() => defaultValue * 130)));
+  }, [onChange]);
+  useEffect(() => {
+    if (isModalOpen && measureRef.current) {
+      setInputVal(measureRef.current.clientWidth / value);
+    }
+  }, [measureRef.current, isModalOpen]);
   return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(Button, {
     onClick: () => setIsModalOpen(true)
   }, "Tune scale"), /* @__PURE__ */ React.createElement(Modal, {
     isOpen: isModalOpen,
     onClose: () => setIsModalOpen(false)
-  }, /* @__PURE__ */ React.createElement(ModalHeader, null, /* @__PURE__ */ React.createElement("h2", {
+  }, /* @__PURE__ */ React.createElement(ModalHeader, null, /* @__PURE__ */ React.createElement("span", {
     className: "text-xl"
   }, "Tune scale factor")), /* @__PURE__ */ React.createElement(ModalBody, null, /* @__PURE__ */ React.createElement("p", {
     className: "mb-4 text-base"
   }, "Default values used for displaying keycap size can be too far from real keycap size. To correct that measure width of the red line below and enter width in mm in the input."), /* @__PURE__ */ React.createElement("div", {
+    ref: measureRef,
     className: "h-1 bg-red-700 mb-2"
   }), /* @__PURE__ */ React.createElement(Label, null, /* @__PURE__ */ React.createElement("p", {
     className: "mb-1 text-sm"
-  }, "Enter scale factor"), /* @__PURE__ */ React.createElement(Input, {
-    css: true,
+  }, "Red line width in mm"), /* @__PURE__ */ React.createElement(Input, {
+    css: "",
     type: "number",
-    value
+    value: inputVal,
+    onChange: onChangeHandler
   }))), /* @__PURE__ */ React.createElement(ModalFooter, null, /* @__PURE__ */ React.createElement(Button, {
     className: "w-full sm:w-auto",
     onClick: () => setIsModalOpen(false)
   }, "Ok"))));
 };
-export const App = ({storedScale}) => {
+export const App = ({storedPpm}) => {
   const [column, setColumn] = useState(defaultColumn);
   const [positions, setPositions] = useState(defaultPositions);
+  const [showAuxiliaryLines, setShowAuxiliaryLines] = useState(true);
   const ref = useRef(null);
-  const [mmPer300px, setMmPer300px] = useState(pipe(storedScale, O.getOrElse(() => defaultMMPer300px)));
-  const linearScale = mmPer300px / 30;
+  const defaultPpm = pipe(storedPpm, O.getOrElse(() => DEFAULT_PX_PER_MM_VALUE));
+  const [ppm, setPpm] = useState(defaultPpm);
+  const onPpmChange = useCallback((newPpm) => {
+    setPrimitive(PIX_PER_MM_LOCALSTORAGE_KEY, newPpm)();
+    setPpm(newPpm);
+  }, [setPpm, setPrimitive]);
   useEffect(() => {
     function f(evt) {
       evt.preventDefault();
@@ -211,24 +245,31 @@ export const App = ({storedScale}) => {
   }, "Reset column"), /* @__PURE__ */ React.createElement(Button, {
     className: "",
     onClick: () => setPositions(defaultPositions)
-  }, "Reset all"), /* @__PURE__ */ React.createElement(ScaleTune, {
-    value: String(mmPer300px),
-    onChange: (v) => {
-      pipe(N.floatFromString(v), O.fold(() => {
-      }, (n) => {
-        setPrimitive("SCALE_FACTOR", n)();
-        setMmPer300px(n);
-      }));
+  }, "Reset all"), /* @__PURE__ */ React.createElement(PxPerMMControl, {
+    value: ppm,
+    onChange: onPpmChange,
+    defaultValue: defaultPpm
+  }), /* @__PURE__ */ React.createElement(Label, null, /* @__PURE__ */ React.createElement(Button, {
+    tag: "span"
+  }, /* @__PURE__ */ React.createElement(Input, {
+    type: "checkbox",
+    css: "",
+    checked: showAuxiliaryLines,
+    onChange: (evt) => {
+      setShowAuxiliaryLines((val) => !val);
     }
-  }))), /* @__PURE__ */ React.createElement("div", {
+  }), /* @__PURE__ */ React.createElement("span", {
+    className: "ml-2"
+  }, "Aux lines"))))), /* @__PURE__ */ React.createElement("div", {
     className: "touchytouchy",
     ref
   }, /* @__PURE__ */ React.createElement(Boo, {
     data: positions,
-    linearScale
+    ppm,
+    showAuxiliaryLines
   })));
 };
-const setup = () => pipe({scale: TE.fromIOEither(getFloat("SCALE_FACTOR"))}, sequenceS(TE.ApplyPar));
+const setup = () => pipe({ppm: TE.fromIOEither(getFloat(PIX_PER_MM_LOCALSTORAGE_KEY))}, sequenceS(TE.ApplyPar));
 export default () => pipe(AED.useAsyncEitherData(setup()), AED.fold(() => /* @__PURE__ */ React.createElement(React.Fragment, null, "Initialization"), () => /* @__PURE__ */ React.createElement(React.Fragment, null, "Loading"), (e) => /* @__PURE__ */ React.createElement("p", null, "Error: ", JSON.stringify(e)), (config) => /* @__PURE__ */ React.createElement(App, {
-  storedScale: config.scale
+  storedPpm: config.ppm
 })));
