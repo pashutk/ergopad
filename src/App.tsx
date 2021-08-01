@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, useReducer } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useReducer,
+  useCallback,
+} from 'react';
 import './App.css';
 import { leastSquares } from './leastSquares';
 import { useTwo } from './hooks';
@@ -25,6 +31,7 @@ import {
   Button,
   Input,
   Label,
+  Select,
 } from '@windmill/react-ui';
 
 type Column = 'pinky' | 'ring' | 'middle' | 'index' | 'index_far' | 'thumb';
@@ -88,10 +95,12 @@ type Pos = { x: number; y: number };
 
 const Boo = ({
   data,
-  linearScale,
+  ppm,
+  showAuxiliaryLines,
 }: {
   data: Record<Column, Pos[]>;
-  linearScale: number;
+  ppm: number;
+  showAuxiliaryLines: boolean;
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   useTwo(
@@ -99,41 +108,47 @@ const Boo = ({
     (two, el) => {
       Object.entries(data).forEach(([column, positions]) => {
         const fill = columnToColor(column as Column);
-        positions.forEach((pos) => {
-          const circle = two.makeCircle(pos.x, pos.y, 15);
-          circle.linewidth = 0;
-          circle.fill = fill;
-          circle.opacity = 0.5;
-        });
+        if (showAuxiliaryLines) {
+          positions.forEach((pos) => {
+            const circle = two.makeCircle(pos.x, pos.y, 15);
+            circle.linewidth = 0;
+            circle.fill = fill;
+            circle.opacity = 0.5;
+          });
+        }
         if (positions.length > 1) {
           const trendline = leastSquares(positions, column !== 'thumb');
-          const line = two.makeLine(
-            0,
-            trendline.b,
-            el.clientWidth,
-            trendline.m * el.clientWidth + trendline.b,
-          );
-          line.stroke = fill;
-          line.opacity = 0.5;
+          if (showAuxiliaryLines) {
+            const line = two.makeLine(
+              0,
+              trendline.b,
+              el.clientWidth,
+              trendline.m * el.clientWidth + trendline.b,
+            );
+            line.stroke = fill;
+            line.opacity = 0.5;
+          }
 
           const projections = positions.map(
             projectPointToLine(slopeInterceptFormToStandardForm(trendline)),
           );
 
-          projections.forEach((pos, i) => {
-            const circle = two.makeCircle(pos.x, pos.y, 3);
-            circle.linewidth = 0;
-            circle.fill = 'red';
-            circle.opacity = 0.3;
+          if (showAuxiliaryLines) {
+            projections.forEach((pos, i) => {
+              const circle = two.makeCircle(pos.x, pos.y, 3);
+              circle.linewidth = 0;
+              circle.fill = 'red';
+              circle.opacity = 0.3;
 
-            const line = two.makeLine(
-              pos.x,
-              pos.y,
-              positions[i].x,
-              positions[i].y,
-            );
-            line.stroke = fill;
-          });
+              const line = two.makeLine(
+                pos.x,
+                pos.y,
+                positions[i].x,
+                positions[i].y,
+              );
+              line.stroke = fill;
+            });
+          }
 
           const xs = projections.map(({ x }) => x);
 
@@ -145,9 +160,9 @@ const Boo = ({
             y: trendline.m * averageX + trendline.b,
           };
 
-          const keyWidth = 17 * linearScale;
+          const keyWidth = 17 * ppm;
           const keyHeight = keyWidth;
-          const gapY = 2 * linearScale;
+          const gapY = 2 * ppm;
           const originX = 0;
           const originY = 0;
 
@@ -207,7 +222,7 @@ const Boo = ({
         two.clear();
       };
     },
-    [data, ref.current, linearScale],
+    [data, ref.current, ppm, showAuxiliaryLines],
   );
   return <div className="boo" ref={ref}></div>;
 };
@@ -223,21 +238,67 @@ const defaultPositions: Record<Column, Pos[]> = {
 
 const defaultMMPer300px = 100;
 
-const ScaleTune = ({
+const DEFAULT_PX_PER_MM_VALUE = 5;
+
+const PIX_PER_MM_LOCALSTORAGE_KEY = 'stored_ppm';
+
+const PxPerMMControl = ({
+  defaultValue,
   value,
   onChange,
 }: {
-  value: string;
-  onChange: (a: string) => void;
+  defaultValue: number;
+  value: number;
+  onChange: (a: number) => void;
 }) => {
+  const [inputVal, setInputVal] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const measureRef = useRef<HTMLDivElement>(null);
+  const onChangeHandler = useCallback(
+    (evt: React.ChangeEvent<HTMLInputElement>) => {
+      const newValue = pipe(
+        O.Do,
+        O.apS(
+          'px',
+          pipe(
+            measureRef.current,
+            O.fromNullable,
+            O.map((el) => el.clientWidth),
+          ),
+        ),
+        O.apS('mm', pipe(evt.target.value, N.floatFromString)),
+        O.bind('value', ({ mm, px }) => O.of(px / mm)),
+      );
+
+      setInputVal(
+        pipe(
+          newValue,
+          O.map(({ mm }) => mm),
+          O.getOrElse(() => 130),
+        ),
+      );
+      onChange(
+        pipe(
+          newValue,
+          O.map(({ value }) => value),
+          O.getOrElse(() => defaultValue * 130),
+        ),
+      );
+    },
+    [onChange],
+  );
+  useEffect(() => {
+    if (isModalOpen && measureRef.current) {
+      setInputVal(measureRef.current.clientWidth / value);
+    }
+  }, [measureRef.current, isModalOpen]);
 
   return (
     <>
       <Button onClick={() => setIsModalOpen(true)}>Tune scale</Button>
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
         <ModalHeader>
-          <h2 className="text-xl">Tune scale factor</h2>
+          <span className="text-xl">Tune scale factor</span>
         </ModalHeader>
         <ModalBody>
           <p className="mb-4 text-base">
@@ -245,10 +306,15 @@ const ScaleTune = ({
             real keycap size. To correct that measure width of the red line
             below and enter width in mm in the input.
           </p>
-          <div className="h-1 bg-red-700 mb-2" />
+          <div ref={measureRef} className="h-1 bg-red-700 mb-2" />
           <Label>
-            <p className="mb-1 text-sm">Enter scale factor</p>
-            <Input css type="number" value={value} />
+            <p className="mb-1 text-sm">Red line width in mm</p>
+            <Input
+              css=""
+              type="number"
+              value={inputVal}
+              onChange={onChangeHandler}
+            />
           </Label>
         </ModalBody>
         <ModalFooter>
@@ -264,17 +330,24 @@ const ScaleTune = ({
   );
 };
 
-export const App = ({ storedScale }: { storedScale: O.Option<number> }) => {
+export const App = ({ storedPpm }: { storedPpm: O.Option<number> }) => {
   const [column, setColumn] = useState(defaultColumn);
   const [positions, setPositions] = useState(defaultPositions);
+  const [showAuxiliaryLines, setShowAuxiliaryLines] = useState(true);
   const ref = useRef<HTMLDivElement>(null);
-  const [mmPer300px, setMmPer300px] = useState(
-    pipe(
-      storedScale,
-      O.getOrElse(() => defaultMMPer300px),
-    ),
+  const defaultPpm = pipe(
+    storedPpm,
+    O.getOrElse(() => DEFAULT_PX_PER_MM_VALUE),
   );
-  const linearScale = mmPer300px / 30;
+  const [ppm, setPpm] = useState(defaultPpm);
+
+  const onPpmChange = useCallback(
+    (newPpm: number) => {
+      setPrimitive(PIX_PER_MM_LOCALSTORAGE_KEY, newPpm)();
+      setPpm(newPpm);
+    },
+    [setPpm, setPrimitive],
+  );
 
   useEffect(() => {
     function f(this: HTMLDivElement, evt: PointerEvent) {
@@ -314,25 +387,32 @@ export const App = ({ storedScale }: { storedScale: O.Option<number> }) => {
           <Button className="" onClick={() => setPositions(defaultPositions)}>
             Reset all
           </Button>
-          <ScaleTune
-            value={String(mmPer300px)}
-            onChange={(v) => {
-              pipe(
-                N.floatFromString(v),
-                O.fold(
-                  () => {},
-                  (n) => {
-                    setPrimitive('SCALE_FACTOR', n)();
-                    setMmPer300px(n);
-                  },
-                ),
-              );
-            }}
+          <PxPerMMControl
+            value={ppm}
+            onChange={onPpmChange}
+            defaultValue={defaultPpm}
           />
+          <Label>
+            <Button tag="span">
+              <Input
+                type="checkbox"
+                css=""
+                checked={showAuxiliaryLines}
+                onChange={(evt) => {
+                  setShowAuxiliaryLines((val) => !val);
+                }}
+              />
+              <span className="ml-2">Aux lines</span>
+            </Button>
+          </Label>
         </div>
       </div>
       <div className="touchytouchy" ref={ref}>
-        <Boo data={positions} linearScale={linearScale} />
+        <Boo
+          data={positions}
+          ppm={ppm}
+          showAuxiliaryLines={showAuxiliaryLines}
+        />
       </div>
     </div>
   );
@@ -340,7 +420,7 @@ export const App = ({ storedScale }: { storedScale: O.Option<number> }) => {
 
 const setup = () =>
   pipe(
-    { scale: TE.fromIOEither(getFloat('SCALE_FACTOR')) },
+    { ppm: TE.fromIOEither(getFloat(PIX_PER_MM_LOCALSTORAGE_KEY)) },
     sequenceS(TE.ApplyPar),
   );
 
@@ -351,6 +431,6 @@ export default () =>
       () => <>Initialization</>,
       () => <>Loading</>,
       (e) => <p>Error: {JSON.stringify(e)}</p>,
-      (config) => <App storedScale={config.scale} />,
+      (config) => <App storedPpm={config.ppm} />,
     ),
   );
