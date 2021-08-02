@@ -1,5 +1,6 @@
 {
   "imports": {
+    "@heroicons/react/solid": "./@heroicons/react/solid.js",
     "@windmill/react-ui": "./@windmill/react-ui.js",
     "fp-ts-std/JSON": "./fp-ts-std/JSON.js",
     "fp-ts-std/Number": "./fp-ts-std/Number.js",
@@ -11,6 +12,7 @@
     "fp-ts/lib/function": "./fp-ts/lib/function.js",
     "ml-regression-simple-linear": "./ml-regression-simple-linear.js",
     "react": "./react.js",
-    "react-dom": "./react-dom.js"
+    "react-dom": "./react-dom.js",
+    "react-hot-toast": "./react-hot-toast.js"
   }
 }

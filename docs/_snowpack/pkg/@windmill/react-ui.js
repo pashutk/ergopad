@@ -8,6 +8,8 @@ var dist = createCommonjsModule(function (module, exports) {
 });
 
 var Button = dist.Button;
+var Dropdown = dist.Dropdown;
+var DropdownItem = dist.DropdownItem;
 var Input = dist.Input;
 var Label = dist.Label;
 var Modal = dist.Modal;
@@ -15,4 +17,4 @@ var ModalBody = dist.ModalBody;
 var ModalFooter = dist.ModalFooter;
 var ModalHeader = dist.ModalHeader;
 var Windmill = dist.Windmill;
-export { Button, Input, Label, Modal, ModalBody, ModalFooter, ModalHeader, Windmill };
+export { Button, Dropdown, DropdownItem, Input, Label, Modal, ModalBody, ModalFooter, ModalHeader, Windmill };

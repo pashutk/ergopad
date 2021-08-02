@@ -6,7 +6,7 @@ import React, {
 } from "../_snowpack/pkg/react.js";
 import "./App.css.proxy.js";
 import {leastSquares} from "./leastSquares.js";
-import {useTwo} from "./hooks.js";
+import {usePopupState, useTwo} from "./hooks.js";
 import {
   projectPointToLine,
   slopeInterceptFormToStandardForm
@@ -25,8 +25,12 @@ import {
   ModalFooter,
   Button,
   Input,
-  Label
+  Label,
+  Dropdown,
+  DropdownItem
 } from "../_snowpack/pkg/@windmill/react-ui.js";
+import {SaveIcon} from "../_snowpack/pkg/@heroicons/react/solid.js";
+import toast, {Toaster} from "../_snowpack/pkg/react-hot-toast.js";
 const defaultColumn = "middle";
 const columns = [
   "thumb",
@@ -198,6 +202,27 @@ const PxPerMMControl = ({
     onClick: () => setIsModalOpen(false)
   }, "Ok"))));
 };
+const Export = ({
+  onRawExport,
+  state
+}) => {
+  const key = String(state.isOpen);
+  return /* @__PURE__ */ React.createElement("div", {
+    className: "relative"
+  }, /* @__PURE__ */ React.createElement(Button, {
+    key: key + "button",
+    onClick: state.toggle,
+    "aria-label": "Notifications",
+    "aria-haspopup": "true",
+    icon: SaveIcon
+  }, "Export"), /* @__PURE__ */ React.createElement(Dropdown, {
+    isOpen: state.isOpen,
+    onClose: state.close,
+    key: key + "dropdown"
+  }, /* @__PURE__ */ React.createElement(DropdownItem, {
+    onClick: onRawExport
+  }, /* @__PURE__ */ React.createElement("span", null, "Raw"))));
+};
 export const App = ({storedPpm}) => {
   const [column, setColumn] = useState(defaultColumn);
   const [positions, setPositions] = useState(defaultPositions);
@@ -209,6 +234,16 @@ export const App = ({storedPpm}) => {
     setPrimitive(PIX_PER_MM_LOCALSTORAGE_KEY, newPpm)();
     setPpm(newPpm);
   }, [setPpm, setPrimitive]);
+  const exportState = usePopupState(false);
+  const onRawExport = useCallback(() => {
+    navigator.clipboard.writeText(JSON.stringify(positions)).then(() => {
+      toast.success("Copied to clipboard");
+    }).catch(() => {
+      toast.error("Something went wrong");
+    }).finally(() => {
+      exportState.close();
+    });
+  }, [positions, exportState.close]);
   useEffect(() => {
     function f(evt) {
       evt.preventDefault();
@@ -229,7 +264,7 @@ export const App = ({storedPpm}) => {
   }, [ref.current, column]);
   return /* @__PURE__ */ React.createElement("div", {
     className: "app"
-  }, /* @__PURE__ */ React.createElement("div", {
+  }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Toaster, null)), /* @__PURE__ */ React.createElement("div", {
     className: "container p-4 pt-3 pr-0 flex flex-col gap-4"
   }, /* @__PURE__ */ React.createElement(ColumnSelect, {
     column,
@@ -260,7 +295,10 @@ export const App = ({storedPpm}) => {
     }
   }), /* @__PURE__ */ React.createElement("span", {
     className: "ml-2"
-  }, "Aux lines"))))), /* @__PURE__ */ React.createElement("div", {
+  }, "Aux lines"))), /* @__PURE__ */ React.createElement(Export, {
+    onRawExport,
+    state: exportState
+  }))), /* @__PURE__ */ React.createElement("div", {
     className: "touchytouchy",
     ref
   }, /* @__PURE__ */ React.createElement(Boo, {
