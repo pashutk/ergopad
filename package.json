@@ -8,6 +8,7 @@
     "lint": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\""
   },
   "dependencies": {
+    "@heroicons/react": "^1.0.3",
     "@windmill/react-ui": "^0.6.0",
     "fp-ts": "^2.10.5",
     "fp-ts-std": "^0.10.0",
@@ -16,6 +17,7 @@
     "newtype-ts": "^0.3.4",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "react-hot-toast": "^2.1.0",
     "twojs-ts": "^0.7.0-13"
   },
   "devDependencies": {

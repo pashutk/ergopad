@@ -7,7 +7,7 @@ import React, {
 } from 'react';
 import './App.css';
 import { leastSquares } from './leastSquares';
-import { useTwo } from './hooks';
+import { PopupState, usePopupState, useTwo } from './hooks';
 import {
   Point2D,
   projectPointToLine,
@@ -32,7 +32,12 @@ import {
   Input,
   Label,
   Select,
+  Dropdown,
+  DropdownItem,
+  Badge,
 } from '@windmill/react-ui';
+import { SaveIcon } from '@heroicons/react/solid';
+import toast, { Toaster } from 'react-hot-toast';
 
 type Column = 'pinky' | 'ring' | 'middle' | 'index' | 'index_far' | 'thumb';
 
@@ -330,6 +335,49 @@ const PxPerMMControl = ({
   );
 };
 
+const Export = ({
+  onRawExport,
+  state,
+}: {
+  onRawExport: () => void;
+  state: PopupState;
+}) => {
+  // https://github.com/estevanmaito/windmill-react-ui/issues/34
+  const key = String(state.isOpen);
+
+  return (
+    <div className="relative">
+      <Button
+        key={key + 'button'}
+        onClick={state.toggle}
+        aria-label="Notifications"
+        aria-haspopup="true"
+        icon={SaveIcon}
+      >
+        Export
+      </Button>
+      <Dropdown
+        isOpen={state.isOpen}
+        onClose={state.close}
+        key={key + 'dropdown'}
+      >
+        {/* <DropdownItem
+          // tag="a"
+          // href="#"
+          className="justify-between"
+          disabled
+        >
+          <span>Ergogen</span>
+          <Badge type="danger">not available</Badge>
+        </DropdownItem> */}
+        <DropdownItem onClick={onRawExport}>
+          <span>Raw</span>
+        </DropdownItem>
+      </Dropdown>
+    </div>
+  );
+};
+
 export const App = ({ storedPpm }: { storedPpm: O.Option<number> }) => {
   const [column, setColumn] = useState(defaultColumn);
   const [positions, setPositions] = useState(defaultPositions);
@@ -348,6 +396,21 @@ export const App = ({ storedPpm }: { storedPpm: O.Option<number> }) => {
     },
     [setPpm, setPrimitive],
   );
+
+  const exportState = usePopupState(false);
+  const onRawExport = useCallback(() => {
+    navigator.clipboard
+      .writeText(JSON.stringify(positions))
+      .then(() => {
+        toast.success('Copied to clipboard');
+      })
+      .catch(() => {
+        toast.error('Something went wrong');
+      })
+      .finally(() => {
+        exportState.close();
+      });
+  }, [positions, exportState.close]);
 
   useEffect(() => {
     function f(this: HTMLDivElement, evt: PointerEvent) {
@@ -370,6 +433,9 @@ export const App = ({ storedPpm }: { storedPpm: O.Option<number> }) => {
 
   return (
     <div className="app">
+      <div>
+        <Toaster />
+      </div>
       <div className="container p-4 pt-3 pr-0 flex flex-col gap-4">
         <ColumnSelect column={column} onChange={(c) => setColumn(c)} />
         <div className="flex gap-2 pr-4">
@@ -405,6 +471,7 @@ export const App = ({ storedPpm }: { storedPpm: O.Option<number> }) => {
               <span className="ml-2">Aux lines</span>
             </Button>
           </Label>
+          <Export onRawExport={onRawExport} state={exportState} />
         </div>
       </div>
       <div className="touchytouchy" ref={ref}>
