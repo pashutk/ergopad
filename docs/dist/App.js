@@ -236,7 +236,7 @@ export const App = ({storedPpm}) => {
   }, [setPpm, setPrimitive]);
   const exportState = usePopupState(false);
   const onRawExport = useCallback(() => {
-    navigator.clipboard.writeText(JSON.stringify(positions)).then(() => {
+    globalThis.navigator.clipboard.writeText(JSON.stringify(positions)).then(() => {
       toast.success("Copied to clipboard");
     }).catch(() => {
       toast.error("Something went wrong");
