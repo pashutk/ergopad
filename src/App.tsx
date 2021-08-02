@@ -399,7 +399,7 @@ export const App = ({ storedPpm }: { storedPpm: O.Option<number> }) => {
 
   const exportState = usePopupState(false);
   const onRawExport = useCallback(() => {
-    navigator.clipboard
+    globalThis.navigator.clipboard
       .writeText(JSON.stringify(positions))
       .then(() => {
         toast.success('Copied to clipboard');
