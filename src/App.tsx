@@ -38,6 +38,7 @@ import {
 } from '@windmill/react-ui';
 import { SaveIcon } from '@heroicons/react/solid';
 import toast, { Toaster } from 'react-hot-toast';
+import { copy } from './copy';
 
 type Column = 'pinky' | 'ring' | 'middle' | 'index' | 'index_far' | 'thumb';
 
@@ -399,8 +400,7 @@ export const App = ({ storedPpm }: { storedPpm: O.Option<number> }) => {
 
   const exportState = usePopupState(false);
   const onRawExport = useCallback(() => {
-    globalThis.navigator.clipboard
-      .writeText(JSON.stringify(positions))
+    copy(JSON.stringify(positions))
       .then(() => {
         toast.success('Copied to clipboard');
       })
