@@ -31,6 +31,7 @@ import {
 } from "../_snowpack/pkg/@windmill/react-ui.js";
 import {SaveIcon} from "../_snowpack/pkg/@heroicons/react/solid.js";
 import toast, {Toaster} from "../_snowpack/pkg/react-hot-toast.js";
+import {copy} from "./copy.js";
 const defaultColumn = "middle";
 const columns = [
   "thumb",
@@ -236,7 +237,7 @@ export const App = ({storedPpm}) => {
   }, [setPpm, setPrimitive]);
   const exportState = usePopupState(false);
   const onRawExport = useCallback(() => {
-    globalThis.navigator.clipboard.writeText(JSON.stringify(positions)).then(() => {
+    copy(JSON.stringify(positions)).then(() => {
       toast.success("Copied to clipboard");
     }).catch(() => {
       toast.error("Something went wrong");
