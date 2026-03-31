@@ -4,6 +4,7 @@
     "build": "vite build",
     "release": "vite build && rm -rf docs && cp -r dist/ docs/ && touch docs/.nojekyll",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
     "lint": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\""
@@ -21,7 +22,10 @@
     "react-hot-toast": "^2.1.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@testing-library/react": "^12.1.5",
+    "@testing-library/react-hooks": "^8.0.1",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^17.0.4",
     "@types/react-dom": "^17.0.3",
     "@types/two.js": "^0.7.4",
