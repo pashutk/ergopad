@@ -7,9 +7,10 @@ import React, {
 } from 'react';
 import './App.css';
 import { leastSquares } from './leastSquares';
-import { PopupState, usePopupState, useTwo } from './hooks';
+import { usePopupState, useTwo } from './hooks';
+import type { PopupState } from './hooks';
+import type { Point2D } from './geometry';
 import {
-  Point2D,
   projectPointToLine,
   slopeInterceptFormToStandardForm,
 } from './geometry';

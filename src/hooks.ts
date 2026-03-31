@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import TwoTS from 'twojs-ts';
-declare class Two extends TwoTS {}
+import type TwoTS from 'twojs-ts';
+declare const Two: typeof TwoTS;
 
 export const useTwo = <T extends HTMLElement>(
   elRef: React.RefObject<T>,
