@@ -1,8 +1,8 @@
 import { pipe } from 'fp-ts/lib/function';
-import type IO from 'fp-ts/lib/IO';
-import IOE from 'fp-ts/lib/IOEither';
-import E from 'fp-ts/lib/Either';
-import O from 'fp-ts/lib/Option';
+import * as IO from 'fp-ts/lib/IO';
+import * as IOE from 'fp-ts/lib/IOEither';
+import * as E from 'fp-ts/lib/Either';
+import * as O from 'fp-ts/lib/Option';
 import * as N from 'fp-ts-std/Number';
 import * as J from 'fp-ts-std/JSON';
 
