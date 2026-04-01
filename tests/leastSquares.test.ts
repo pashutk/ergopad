@@ -24,6 +24,19 @@ describe('leastSquares', () => {
     expect(result.b).toBeCloseTo(0);
   });
 
+  it('fits asymmetric data — catches X/Y extraction swap', () => {
+    // Points on y = 3x + 1 where x ≠ y, so swapping X/Y arrays produces a
+    // different (wrong) result and the test catches it.
+    const points = [
+      { x: 1, y: 4 },
+      { x: 2, y: 7 },
+      { x: 4, y: 13 },
+    ];
+    const result = leastSquares(points);
+    expect(result.m).toBeCloseTo(3);
+    expect(result.b).toBeCloseTo(1);
+  });
+
   it('fits a negative slope', () => {
     const points = [
       { x: 0, y: 3 },

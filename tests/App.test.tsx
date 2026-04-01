@@ -35,25 +35,45 @@ describe('App', () => {
 
   it('middle column is active by default', () => {
     renderApp();
-    // Active column button has layout="outline" — Windmill renders it with a
-    // border class. Verify the middle button exists and is in the document.
-    expect(screen.getByRole('button', { name: /middle/i })).toBeTruthy();
+    const middleBtn = screen.getByRole('button', { name: 'middle' });
+    const pinkyBtn = screen.getByRole('button', { name: 'pinky' });
+    // Active column (outline layout) and inactive (primary layout) have different classes
+    expect(middleBtn.className).not.toBe(pinkyBtn.className);
   });
 
-  it('switches active column on click without throwing', () => {
+  it('switches active column on click', () => {
     renderApp();
-    fireEvent.click(screen.getByRole('button', { name: /pinky/i }));
-    fireEvent.click(screen.getByRole('button', { name: /thumb/i }));
+    const middleBtn = screen.getByRole('button', { name: 'middle' });
+    const pinkyBtn = screen.getByRole('button', { name: 'pinky' });
+    const initialMiddleClass = middleBtn.className;
+    const initialPinkyClass = pinkyBtn.className;
+
+    fireEvent.click(pinkyBtn);
+
+    // After clicking pinky: pinky becomes active (outline), middle becomes inactive (primary)
+    expect(pinkyBtn.className).toBe(initialMiddleClass);
+    expect(middleBtn.className).toBe(initialPinkyClass);
   });
 
-  it('reset column button is present and clickable', () => {
+  it('reset all clears positions — export returns empty state', async () => {
     renderApp();
-    fireEvent.click(screen.getByRole('button', { name: /reset column/i }));
-  });
-
-  it('reset all button is present and clickable', () => {
-    renderApp();
+    // Click Reset all, then export and verify all columns are empty arrays
     fireEvent.click(screen.getByRole('button', { name: /reset all/i }));
+    fireEvent.click(screen.getByText('Export'));
+    await waitFor(() => screen.getByText('Raw'));
+    fireEvent.click(screen.getByText('Raw'));
+    await waitFor(() =>
+      expect((navigator.clipboard as any).writeText).toHaveBeenCalledWith(
+        JSON.stringify({
+          thumb: [],
+          index_far: [],
+          index: [],
+          middle: [],
+          ring: [],
+          pinky: [],
+        }),
+      ),
+    );
   });
 
   it('aux lines checkbox is checked by default and toggles on click', () => {

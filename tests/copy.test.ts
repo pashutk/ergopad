@@ -19,4 +19,21 @@ describe('copy', () => {
     await copy('hello');
     expect(document.execCommand).toHaveBeenCalledWith('copy');
   });
+
+  it('uses iOS selection API on iOS devices', async () => {
+    vi.stubGlobal('navigator', {
+      clipboard: undefined,
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+    });
+    document.execCommand = vi.fn().mockReturnValue(true);
+    const mockSelection = { removeAllRanges: vi.fn(), addRange: vi.fn() };
+    vi.spyOn(window, 'getSelection').mockReturnValue(mockSelection as any);
+
+    await copy('hello');
+
+    // iOS path uses createRange + setSelectionRange instead of .select()
+    expect(mockSelection.removeAllRanges).toHaveBeenCalled();
+    expect(mockSelection.addRange).toHaveBeenCalled();
+    expect(document.execCommand).toHaveBeenCalledWith('copy');
+  });
 });
