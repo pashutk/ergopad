@@ -5,6 +5,7 @@
     "release": "vite build && rm -rf docs && cp -r dist/ docs/ && touch docs/.nojekyll",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:e2e:update-snapshots": "docker run --rm -v \"$(pwd):/work\" -w /work --ipc=host mcr.microsoft.com/playwright:v1.58.2-noble sh -c 'npm ci && npx playwright test --update-snapshots'",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
     "lint": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\""
