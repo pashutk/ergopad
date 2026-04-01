@@ -9,12 +9,22 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+      - run: npm run test:e2e -- --update-snapshots=missing
+      - name: Commit new snapshots
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git add e2e/
+          git diff --staged --quiet || git commit -m "Add missing visual snapshots for linux" && git push
